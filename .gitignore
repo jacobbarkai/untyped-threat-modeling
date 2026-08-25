@@ -1,0 +1,21 @@
+# Never commit this. It holds a live API key.
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+.pytest_cache/
+
+# Generated output
+*.svg
+topology.json
+
+# Editors and OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
