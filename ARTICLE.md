@@ -111,10 +111,10 @@ flowchart LR
 A real extraction, from a six resource Terraform file:
 
 ```
-medical_device_ble_pairing.bedside_monitor
-  ['type=medical_device_ble_pairing', 'label=bedside_monitor',
-   'pairing_mode=just_works', 'firmware=2.1.0',
-   'uplink=aws_api_gateway_rest_api.public.id']
+5  medical_device_ble_pairing.bedside_monitor
+   ['block=resource', 'type=medical_device_ble_pairing',
+    'label=bedside_monitor', 'pairing_mode=just_works',
+    'firmware=2.1.0', 'uplink=aws_api_gateway_rest_api.public.id']
 ```
 
 That resource type does not exist in AWS and no provider defines it. A taxonomy driven parser has nothing to map it to. Here it reaches analysis with `pairing_mode=just_works` intact, and any reader of the Bluetooth specifications knows that Just Works pairing provides no man in the middle protection.

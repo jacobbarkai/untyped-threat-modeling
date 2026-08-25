@@ -141,7 +141,13 @@ class LLM:
     def json(self, system: str, blocks: list, schema: dict, max_tokens: int = 16000) -> dict:
         """Return a dict conforming to `schema`, whatever the provider supports."""
         if self.provider == "anthropic":
-            resp = self._client.messages.create(
+            # Streamed, not because the output is displayed progressively but because
+            # the SDK refuses a non-streaming request whose max_tokens implies a
+            # response that could run past ten minutes. --audit asks for a decision on
+            # every vertex-category cell, so it sets max_tokens high enough to trip
+            # that guard. get_final_message() assembles the whole response, so nothing
+            # downstream sees a difference.
+            with self._client.messages.stream(
                 model=self.model,
                 max_tokens=max_tokens,
                 thinking={"type": "adaptive"},
@@ -149,8 +155,28 @@ class LLM:
                 messages=[{"role": "user", "content": blocks}],
                 output_config={"effort": "high",
                                "format": {"type": "json_schema", "schema": schema}},
-            )
-            return json.loads(next(b.text for b in resp.content if b.type == "text"))
+            ) as stream:
+                resp = stream.get_final_message()
+
+            # A refusal or a truncated response yields content with no text block.
+            # Without this guard that surfaces as a bare StopIteration from next().
+            text = next((b.text for b in resp.content if b.type == "text"), None)
+            if text is None:
+                sys.exit(f"model returned no text block "
+                         f"(stop_reason={resp.stop_reason}). Try a smaller graph.")
+            return _parse_json(text)
+
+        # Output ceilings vary widely across this family and are lower than people
+        # expect: gpt-4o tops out at 16384 completion tokens, and several hosted
+        # providers cap lower again. --audit asks for more than that, so clamp rather
+        # than let the provider reject the whole request as invalid. Raise the ceiling
+        # with LLM_MAX_OUTPUT_TOKENS when the provider allows it.
+        ceiling = int(os.environ.get("LLM_MAX_OUTPUT_TOKENS", "16000"))
+        if max_tokens > ceiling:
+            print(f"note: max_tokens {max_tokens} clamped to {ceiling} for this "
+                  f"provider. Set LLM_MAX_OUTPUT_TOKENS higher if it allows it, or "
+                  f"expect a truncated result on large graphs.", file=sys.stderr)
+            max_tokens = ceiling
 
         messages = [{"role": "system", "content": system},
                     {"role": "user", "content": blocks}]
@@ -164,10 +190,15 @@ class LLM:
             {"response_format": {"type": "json_object"}},
             {},
         ]
+        # A long generation can outlast the default ten minute client timeout. The
+        # OpenAI SDK does not refuse upfront the way Anthropic's does, it simply waits
+        # and then raises, so give it room proportional to what was asked for.
+        client = self._client.with_options(timeout=max(600.0, max_tokens / 20))
+
         last = None
         for extra in attempts:
             try:
-                resp = self._client.chat.completions.create(
+                resp = client.chat.completions.create(
                     model=self.model, max_tokens=max_tokens,
                     messages=messages, **extra)
                 return _parse_json(resp.choices[0].message.content)

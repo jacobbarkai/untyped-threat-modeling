@@ -87,6 +87,10 @@ Across a few dozen architectures that diff characterises where a taxonomy is bli
 
 **If you run it against real infrastructure, please open an issue with what the diff looked like, particularly if the answer was nothing.** Negative results are the useful ones here.
 
+## What the output looks like
+
+[**sample-output.md**](sample-output.md) has real runs of all three modes against `sample.tf`, reproduced verbatim, so the behaviour can be judged without spending tokens.
+
 ## The article
 
 The full argument, with diagrams, the four objections worked through, and the prior work discussed properly: [**ARTICLE.md**](ARTICLE.md).
