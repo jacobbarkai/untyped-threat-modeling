@@ -1,0 +1,13 @@
+flowchart LR
+    A["The same artifact"] --> B["Taxonomy driven method"]
+    A --> C["Untyped pass"]
+    B --> D["Findings T"]
+    C --> E["Findings U"]
+    D --> F{"Diff"}
+    E --> F
+    F --> G["In U, not in T<br/>candidate gaps in the rule set"]
+    F --> H["In T, not in U<br/>calibrates how far U can be trusted"]
+    F --> I["Declared uninterpretable<br/>what the taxonomy coerces in silence"]
+
+    style G fill:#fdf3d0,stroke:#8a6d1f,color:#3d3013
+    style I fill:#f7d9d9,stroke:#8a2b2b,color:#3d1313

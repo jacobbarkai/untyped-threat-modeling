@@ -1,0 +1,13 @@
+flowchart LR
+    A["Artifact<br/>Terraform, K8s manifest, SBOM, diagram file"] --> B["Parse"]
+    B --> C{"Map onto<br/>component taxonomy"}
+    C -->|"in the taxonomy"| D["Typed component"]
+    C -->|"outside it"| E["Discarded, or coerced<br/>to a generic process"]
+    D --> F["Data flow diagram"]
+    E --> F
+    F --> G["Rule set keyed to<br/>component types"]
+    G --> H["Threat report"]
+    H -.->|"says nothing about<br/>what happened at the gate"| E
+
+    style C fill:#fdf3d0,stroke:#8a6d1f,color:#3d3013
+    style E fill:#f7d9d9,stroke:#8a2b2b,color:#3d1313

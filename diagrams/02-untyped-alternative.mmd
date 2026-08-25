@@ -1,0 +1,9 @@
+flowchart LR
+    A["Artifact"] --> B["Parse to a directed graph<br/>node = integer + bag of raw strings<br/>edge = pair of integers"]
+    B --> C["Topology"]
+    C --> D["Force directed layout"]
+    C --> E["Analysis reads<br/>strings and edges"]
+    D --> F["Rendering<br/>a view, not a data structure"]
+    E --> G["Threats as paths<br/>Inferred boundaries<br/>Uninterpreted list"]
+
+    style C fill:#dbe7f3,stroke:#2b5a8a,color:#132738
