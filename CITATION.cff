@@ -21,15 +21,15 @@ authors:
 type: software
 repository-code: "https://github.com/jacobbarkai/untyped-threat-modeling"
 license: CC0-1.0
-version: v1.0.0
+version: v1.1.0
 date-released: 2026-08-25
 identifiers:
   - type: doi
     value: 10.5281/zenodo.22100345
-    description: Concept DOI, always resolves to the latest version
-  - type: doi
-    value: 10.5281/zenodo.22100346
-    description: Version DOI for v1.0.0
+    description: >-
+      Concept DOI. Always resolves to the latest version, so it does not go stale
+      here. Each release also receives its own version DOI, shown on that release's
+      Zenodo record, for citations that need to pin exactly what was read.
 keywords:
   - threat modeling
   - security by design
