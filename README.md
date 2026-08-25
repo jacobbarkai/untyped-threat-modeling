@@ -1,5 +1,8 @@
 # untyped-threat-modeling
 
+[![DOI](https://zenodo.org/badge/1346408316.svg)](https://doi.org/10.5281/zenodo.22100345)
+[![License: CC0-1.0](https://img.shields.io/badge/License-CC0_1.0-lightgrey.svg)](LICENSE)
+
 Threat modeling from an untyped property graph. No component taxonomy, no rule set, no schema.
 
 Automated threat modeling usually parses an artifact, maps what it finds onto a library of known component types, assembles a data flow diagram, and runs rules keyed to those types. The mapping step looks like a parsing convenience. It is the index the whole rule set is keyed against, and it imposes a bound: **a component the taxonomy cannot name is a component the rules cannot reach.**

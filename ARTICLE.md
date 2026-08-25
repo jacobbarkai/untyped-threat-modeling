@@ -291,3 +291,7 @@ Results from anyone running the diff against real infrastructure would be of int
 [5] "SMSI: System Model Security Inference: Automated Threat Modeling for Cyber-Physical Systems." arXiv:2604.23905, April 2026. https://arxiv.org/abs/2604.23905
 
 [6] Fruchterman, T. M. J., Reingold, E. M. "Graph Drawing by Force-Directed Placement." *Software: Practice and Experience*, 21(11), pp. 1129-1164, 1991. https://doi.org/10.1002/spe.4380211102
+
+---
+
+**Archived record:** [10.5281/zenodo.22100345](https://doi.org/10.5281/zenodo.22100345) (concept DOI, latest version). Code and article: [github.com/jacobbarkai/untyped-threat-modeling](https://github.com/jacobbarkai/untyped-threat-modeling). CC0.

@@ -1,0 +1,39 @@
+cff-version: 1.2.0
+message: "If you use this work, please cite it as below."
+title: "Untyped threat modeling"
+abstract: >-
+  Automated threat modeling maps parsed entities onto a taxonomy of component
+  types before analysing them. That mapping step is the index the rule set is
+  keyed against, and it bounds what the method can find: a component the
+  taxonomy cannot name is a component the rules cannot reach, and the omission
+  is not visible in the output. This work describes and implements the same job
+  done without the mapping step. A node is an integer and an unordered bag of
+  raw strings exactly as they appeared in the source; an edge is a pair of
+  integers. Interpretation is performed by a model reading the strings rather
+  than by code matching them, so the method degrades to inference at the
+  boundary of its knowledge rather than to silence. Includes an audit mode that
+  enumerates every vertex against published threat categories, which is
+  possible because threat categories are closed and published while component
+  types are neither.
+authors:
+  - family-names: Barkai
+    given-names: Jacob
+type: software
+repository-code: "https://github.com/jacobbarkai/untyped-threat-modeling"
+license: CC0-1.0
+version: v1.0.0
+date-released: 2026-08-25
+identifiers:
+  - type: doi
+    value: 10.5281/zenodo.22100345
+    description: Concept DOI, always resolves to the latest version
+  - type: doi
+    value: 10.5281/zenodo.22100346
+    description: Version DOI for v1.0.0
+keywords:
+  - threat modeling
+  - security by design
+  - property graph
+  - large language models
+  - STRIDE
+  - infrastructure as code
