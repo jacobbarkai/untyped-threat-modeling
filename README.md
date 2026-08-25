@@ -84,6 +84,10 @@ Across a few dozen architectures that diff characterises where a taxonomy is bli
 
 **If you run it against real infrastructure, please open an issue with what the diff looked like, particularly if the answer was nothing.** Negative results are the useful ones here.
 
+## The article
+
+The full argument, with diagrams, the four objections worked through, and the prior work discussed properly: [**ARTICLE.md**](ARTICLE.md).
+
 ## Prior work
 
 The field has moved in the opposite direction for a decade, toward more formal type systems, and for defensible reasons.
