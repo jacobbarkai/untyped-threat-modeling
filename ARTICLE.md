@@ -121,6 +121,18 @@ That resource type does not exist in AWS and no provider defines it. A taxonomy 
 
 Trust boundaries follow from the same mechanism. They are conventionally drawn by hand or inferred from typed constructs, yet `subnet=private`, `namespace=clinical`, `vpc_id=` and `zone=restricted` are already present in the string bags. Boundary crossings are inferable without a boundary type existing anywhere in the representation.
 
+### A second thing falls out, which was not designed for
+
+Reasoning over a path rather than a component finds a class of problem a rule cannot reach at all. From the same run:
+
+> The database is declared private and not publicly accessible, yet its declared accessor runs with `vpc_config=none`, meaning the function has no interface in that private subnet. Either the connection actually traverses a public or otherwise widened path, or the isolation intent is not implemented as written. Reviewers should treat the private-subnet attribute here as documentation rather than an enforced control.
+
+Nothing is wrong with either component considered alone. The database is correctly marked private. The function is a perfectly ordinary function. The finding exists only in the relationship between two vertices, where a declared control is contradicted by the topology around it.
+
+A rule keyed to a component type cannot produce this, because evaluating either component in isolation returns nothing. And the failure it identifies, a control that is documented but not enforced, is among the more consequential things a review can find, since it is precisely the class of problem that survives an audit by looking correct in the artifact.
+
+The bedside monitor above shows the method surviving a component nothing recognises. This one shows it noticing that a component everything recognises is lying.
+
 ## How it works
 
 Working code is linked at the end. Around six hundred lines including comments, public domain.
@@ -147,9 +159,9 @@ The position advanced here is therefore a minority one, and the majority positio
 
 > "The task of extracting semantic features for all levels of abstraction... is an undertaking of daunting proportions. In order to make this task manageable the reuse of related standards and taxonomies is required." [[1]](https://stids.c4i.gmu.edu/papers/STIDSPapers/STIDS2016_A2_BromanderJosangEian.pdf)
 
-And explicit about why the cost was necessary:
+And, writing about intrusion detection signatures, explicit about why that cost was unavoidable:
 
-> "TTPs are commonly described using English prose, i.e. as unstructured data. This makes it challenging to translate the description to intrusion detection signatures." [[1]](https://stids.c4i.gmu.edu/papers/STIDSPapers/STIDS2016_A2_BromanderJosangEian.pdf)
+> "TTPs are commonly described using English prose, i.e. as unstructured data. This makes it challenging to translate the description to intrusion detection signatures, and signature development must be performed manually." [[1]](https://stids.c4i.gmu.edu/papers/STIDSPapers/STIDS2016_A2_BromanderJosangEian.pdf)
 
 Together those constitute the rationale for ontologies. Prose could not be acted upon, so it had to be translated into structure first, and that structure had to be constructed and maintained by hand at considerable cost.
 
