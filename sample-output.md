@@ -1,7 +1,9 @@
 # Sample output
 
-Real runs against [`sample.tf`](sample.tf), six resources, on `claude-opus-5`.
-Reproduced verbatim so the behaviour can be judged without spending tokens.
+Real runs on `claude-opus-5`, reproduced verbatim so the behaviour can be judged
+without spending tokens. Runs 1 to 3 use [`sample.tf`](sample.tf), six Terraform
+resources. Run 4 uses [`sample-architecture.png`](sample-architecture.png), a
+picture of an unrelated system, to exercise the vision path.
 
 The input is deliberately bad architecture: an unauthenticated production API
 reaching an administrator-privileged Lambda that reads a private patient database
@@ -223,6 +225,93 @@ provider -> anthropic:claude-opus-5 via api.anthropic.com
     [APPLIES] Elevation of privilege: Any nearby party can complete pairing with no credential and thereby gain device-level access to a bedside monitor plus an injection path into the unauthenticated cloud API.
               evidence: pairing_mode=just_works, firmware=2.1.0, uplink=aws_api_gateway_rest_api.public.id, authorization=NONE
 ```
+
+---
+
+## 4. From an image
+
+`--image` sends a picture to a vision model and asks for the same untyped graph.
+Nothing about the pipeline changes: the extraction prompt forbids classifying nodes
+into types, so what comes back is still integers and bags of strings.
+
+[`sample-architecture.png`](sample-architecture.png) is deliberately unlike
+`sample.tf`. Different domain, different stack, no Terraform, no AWS resource types,
+and the annotations are drawn as text inside boxes rather than supplied as structured
+data. The tiers are visual containers, not `subnet=private` strings.
+
+Three things are worth checking in the output below.
+
+**Boundaries came from the drawing.** DMZ, application tier, data tier and the
+acquired estate were inferred from labelled rectangles in a picture, with no boundary
+type existing anywhere in the representation.
+
+**The AS400 bridge is the boundary-of-knowledge case**, and a more honest one than a
+fabricated Terraform resource type: legacy mainframe integrations over FTP genuinely
+are outside every component taxonomy in the field. It was reasoned about anyway.
+
+**The structural finding is the third one.** The route through the acquired estate
+reaches the database while bypassing both the DMZ proxy and the API's authentication.
+That is a property of the topology, not of any component, and it is the same class of
+finding as the private-subnet contradiction in run 2.
+
+```
+$ python untyped_threat_model.py --image sample-architecture.png
+provider -> anthropic:claude-opus-5 via api.anthropic.com
+
+7 vertices, 7 edges
+
+  boundary  Untrusted public network (outside perimeter): Internet
+            evidence: Internet
+  boundary  DMZ / edge-facing tier: nginx reverse proxy
+            evidence: DMZ, 0.0.0.0/0, nginx reverse proxy
+  boundary  Application tier (internal compute): orders-api, settlement-worker
+            evidence: Application tier, orders-api, settlement-worker
+  boundary  Data tier (persistence, should be deepest zone): orders-db, nightly dump
+            evidence: Data, orders-db, nightly dump
+  boundary  Acquired estate - unmodelled/ungoverned zone outside the reviewed architecture: AS400 ledger bridge
+            evidence: Acquired estate, unmodelled, AS400 ledger bridge, FTP poll
+
+  [CRITICAL] Internet-reachable weak-TLS proxy fronts a basic-auth API that talks to an unencrypted database
+      path: Internet -> nginx reverse proxy -> orders-api -> orders-db
+      evidence: Internet, 0.0.0.0/0, TLS 1.0 enabled, basic auth, postgres 11, no TLS
+      The entry point is open to the whole internet (0.0.0.0/0) and negotiates TLS 1.0, so credentials passed to the only authentication mechanism downstream (basic auth, which transmits a reusable password on every request) are exposed to downgrade/interception. Once an attacker holds those credentials there is no second factor and no authorization layer named anywhere on the path, and orders-api's session to orders-db is itself cleartext ('no TLS'), so the same passive position on the network yields both application credentials and raw record traffic. The severity comes from the chain, not from any single hop: weak edge crypto is survivable behind strong auth, and basic auth is survivable behind strong crypto; together with an unencrypted data leg they compose into an internet-to-database read.
+
+  [CRITICAL] Data-tier compromise flows into an unencrypted public-cloud backup bucket, converting transient DB access into durable bulk exfiltration
+      path: Internet -> nginx reverse proxy -> orders-api -> orders-db -> nightly dump
+      evidence: 0.0.0.0/0, basic auth, no TLS, nightly dump, s3://acme-backups, unencrypted
+      The database's contents are copied nightly to object storage with no encryption at rest and no access-control string of any kind on the vertex. This turns the reachable database into a permanent full-history dataset: an attacker who reaches vertex 5 by the path above, or who finds the bucket independently, gets every prior day's orders rather than a live query window. Absence of any credential, policy, or 'private' marker on the S3 vertex is itself the finding - nothing in the strings distinguishes this bucket from a publicly listable one, and it sits at the end of an internet-originating path.
+
+  [CRITICAL] Unmodelled acquired-estate FTP bridge with plaintext credentials is given a write path into the production database
+      path: orders-api -> settlement-worker -> AS400 ledger bridge -> orders-db
+      evidence: Acquired estate, unmodelled, FTP poll, plaintext creds, cron every 5 min, AS400 ledger bridge, no TLS
+      This is the most serious structural finding because it is a boundary crossing into and back out of a zone the organisation admits it has not modelled. settlement-worker fires every 5 minutes into a legacy AS400 bridge that authenticates over FTP with plaintext credentials, and that bridge has its own edge to orders-db. The graph therefore contains a route to the data tier that bypasses vertices 1 and 2 entirely - the DMZ proxy and the API's basic auth are not on it. Anyone who can sniff or replay the FTP credentials, or who already sits inside the acquired network, reaches production data directly, and the 5-minute cron guarantees a fresh credential exposure 288 times a day. 'Unmodelled' means no compensating control can be assumed to exist.
+
+  [HIGH] Full internet-to-legacy-estate traversal: external entry pivots through the app tier into the ungoverned zone
+      path: Internet -> nginx reverse proxy -> orders-api -> settlement-worker -> AS400 ledger bridge
+      evidence: Internet, 0.0.0.0/0, TLS 1.0 enabled, basic auth, cron every 5 min, Acquired estate, unmodelled, plaintext creds
+      Read in the outbound direction, the same edges let an attacker who compromises orders-api reach the acquired estate rather than merely the database. settlement-worker is an automated component with a standing FTP credential to a legacy mainframe bridge; harvesting that credential from the app tier gives lateral movement into a network segment with no documented controls, monitoring, or ownership. Legacy AS400 ledger systems are typically flat internally, so this hop is likely a privilege escalation as well as a lateral one.
+
+  [HIGH] Unpatched runtime and end-of-life datastore on the sole internet-facing path
+      path: Internet -> nginx reverse proxy -> orders-api -> orders-db
+      evidence: TLS 1.0 enabled, Java 8, postgres 11, 0.0.0.0/0
+      Every component on the externally reachable path carries an aged version marker: TLS 1.0 (deprecated, downgrade- and padding-attack prone), Java 8 as the application runtime, and PostgreSQL 11 which is past community end-of-life. Version staleness matters here specifically because it is stacked along a path that begins at 0.0.0.0/0 - remote code execution in the Java tier lands the attacker one unauthenticated, unencrypted hop from the database and two from the backup bucket. Rated high rather than critical because exploitability depends on the actual patch level, which the strings do not state.
+
+  [MEDIUM] No egress or segmentation control between DMZ, app, data, and external estate
+      path: nginx reverse proxy -> orders-api -> settlement-worker -> AS400 ledger bridge
+      evidence: DMZ, Application tier, Acquired estate, unmodelled, FTP poll
+      The vertices carry tier labels that imply a layered design, but the edge set shows each tier connecting freely to the next and the app tier reaching outward to a third-party network over FTP. No string anywhere in the graph mentions a firewall rule, security group, allow-list, mTLS, or private subnet. The labelled tiers are therefore descriptive rather than enforced, which is what allows the preceding findings to chain end to end instead of being contained at a boundary.
+
+  Uninterpreted (the honesty channel; a library tool reports these as
+  nothing at all):
+      AS400 ledger bridge: Partially interpreted only. 'AS400 ledger bridge' and 'FTP poll' are legible as a legacy mainframe integration over an insecure file-transfer protocol, but 'Acquired estate, unmodelled' is an explicit admission that the artifact does not describe this zone. I cannot tell what else lives behind vertex 4, who owns it, whether its edge to orders-db is read or write, or what the FTP credentials authorise. Findings involving it are inferred from the missing information rather than from stated controls, and the real blast radius may be larger than modelled.
+      nightly dump: Direction and access model are ambiguous. 'nightly dump' and the 5->6 edge suggest the database writes to the bucket, but nothing states whether the bucket is public, who else reads it, whether versioning or retention applies, or which principal holds the write credential. 'unencrypted' is clear; the exposure surface around it is not.
+      settlement-worker: 'cron every 5 min' gives the cadence but not the identity or privilege of settlement-worker. Whether it runs as a shared service account, whether its FTP credential is also valid elsewhere, and whether it writes to orders-db directly are all unstated, so its role as the pivot into vertex 4 is inferred from edges alone.
+```
+
+The uninterpreted list is worth reading twice. It names three vertices, and for each it
+separates what the picture stated from what was inferred from the edges alone. The last
+line of the AS400 entry is the one that matters: *"the real blast radius may be larger
+than modelled."* A method that under reports has to be able to say that about itself.
 
 ---
 

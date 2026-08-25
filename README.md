@@ -89,7 +89,9 @@ Across a few dozen architectures that diff characterises where a taxonomy is bli
 
 ## What the output looks like
 
-[**sample-output.md**](sample-output.md) has real runs of all three modes against `sample.tf`, reproduced verbatim, so the behaviour can be judged without spending tokens.
+[**sample-output.md**](sample-output.md) has real runs, reproduced verbatim, so the behaviour can be judged without spending tokens: extraction, analysis and audit over [`sample.tf`](sample.tf), plus a vision run over [`sample-architecture.png`](sample-architecture.png).
+
+That last one is a picture of an unrelated system, annotated by hand rather than supplied as structured data, and it includes an AS400 ledger bridge polling over FTP with plaintext credentials. No component taxonomy has an entry for that. It was reasoned about anyway, and the run found that the route through it reaches the database while bypassing both the DMZ proxy and the API's authentication.
 
 ## The article
 

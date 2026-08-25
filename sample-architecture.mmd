@@ -1,0 +1,23 @@
+flowchart LR
+    subgraph DMZ["DMZ"]
+        LB["nginx reverse proxy<br/>TLS 1.0 enabled<br/>0.0.0.0/0"]
+    end
+    subgraph APP["Application tier"]
+        API["orders-api<br/>Java 8<br/>basic auth"]
+        WK["settlement-worker<br/>cron every 5 min"]
+    end
+    subgraph LEGACY["Acquired estate, unmodelled"]
+        AS400["AS400 ledger bridge<br/>FTP poll<br/>plaintext creds"]
+    end
+    subgraph DATA["Data"]
+        PG[("orders-db<br/>postgres 11<br/>no TLS")]
+        BAK["nightly dump<br/>s3://acme-backups<br/>unencrypted"]
+    end
+
+    Internet(["Internet"]) --> LB
+    LB --> API
+    API --> PG
+    API --> WK
+    WK --> AS400
+    AS400 --> PG
+    PG --> BAK
